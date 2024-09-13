@@ -12,8 +12,8 @@ import threading
 import time
 import logging
 
-from src.log_server.log_client import create_log_handler
-from src.log_server.log_server import LogServer, run_server
+from src.log_server import create_log_handler
+from src.log_server import LogServer, run_server
 
 
 def start_server_thread():
