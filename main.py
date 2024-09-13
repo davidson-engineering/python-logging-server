@@ -34,7 +34,7 @@ def main():
     start_server_thread()
 
     # Initialize the client
-    remote_logging_handler = create_log_handler(
+    remote_logging_handler = logging.handlers.SocketHandler(
         server_host="127.0.0.1", server_port=9000
     )
 
@@ -45,7 +45,10 @@ def main():
 
     # Log some messages using the logger
     for i in range(5):
-        logger.info(f"Log message {i + 1} from application")
+        logger.info(
+            f"Log message {i + 1} from application",
+            extra={"device": "my_unique_device_id"},
+        )
         time.sleep(1)
 
 

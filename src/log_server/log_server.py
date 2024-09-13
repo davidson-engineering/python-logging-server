@@ -15,6 +15,28 @@ import threading
 import pickle
 import struct
 import os
+import json
+
+
+class JsonFormatter(logging.Formatter):
+    """Custom JSON formatter for logging that includes extra fields."""
+
+    def format(self, record):
+        log_entry = {
+            "asctime": self.formatTime(record, self.datefmt),
+            "name": record.name,
+            "levelname": record.levelname,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            log_entry["exception"] = self.formatException(record.exc_info)
+        if record.stack_info:
+            log_entry["stack_info"] = self.formatStack(record.stack_info)
+        if record.args:
+            log_entry["args"] = record.args
+        if hasattr(record, "device"):
+            log_entry["device"] = record.device
+        return json.dumps(log_entry)
 
 
 # Define the LogServer class
@@ -24,19 +46,21 @@ class LogServer:
         self.port = port
         self.log_file = log_file
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.host, self.port))
-        self.server_socket.listen(5)  # Allow up to 5 connections
+        self.server_socket.listen(5)
 
-        # Set up local file logging
-        logging.basicConfig(
-            filename=self.log_file,
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-        )
+        # Configure FileHandler
+        self.file_handler = logging.FileHandler(self.log_file)
+        # self.file_handler.setFormatter(
+        #     logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        # )
+        self.file_handler.setFormatter(JsonFormatter())
 
-        print(
-            f"LogServer started on {self.host}:{self.port}, writing logs to {self.log_file}"
-        )
+        # Create and configure logger
+        self.logger = logging.getLogger("LogServer")
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(self.file_handler)
 
     def start(self):
         """Start the server and handle client connections."""
@@ -69,9 +93,7 @@ class LogServer:
                     # Recreate a LogRecord object from the dictionary
                     log_record = logging.makeLogRecord(log_record_dict)
 
-                    # Handle the log record with the logging module
-                    logger = logging.getLogger()  # Use the root logger
-                    logger.handle(log_record)  # Pass the log record to the logger
+                    self.logger.handle(log_record)  # Pass the log record to the logger
                 except Exception as e:
                     print(f"Error handling client log record: {e}")
                     break

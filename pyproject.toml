@@ -46,3 +46,9 @@ test = ["pytest >= 7.1.1"]
 
 # [project.entry-points."spam.magical"]
 # tomatoes = "spam:main_tomatoes"
+
+
+[tool.pytest.ini_options]
+# maxfail = 1
+# disable_warnings = true
+# q = true
