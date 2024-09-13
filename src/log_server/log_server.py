@@ -18,6 +18,9 @@ import os
 import json
 
 
+logger = logging.getLogger(__name__)
+
+
 class JsonFormatter(logging.Formatter):
     """Custom JSON formatter for logging that includes extra fields."""
 
@@ -58,21 +61,21 @@ class LogServer:
         self.file_handler.setFormatter(JsonFormatter())
 
         # Create and configure logger
-        self.logger = logging.getLogger("LogServer")
-        self.logger.setLevel(logging.DEBUG)
-        self.logger.addHandler(self.file_handler)
+        self.aggregated_logger = logging.getLogger("aggregated_logger")
+        self.aggregated_logger.setLevel(logging.DEBUG)
+        self.aggregated_logger.addHandler(self.file_handler)
 
     def start(self):
         """Start the server and handle client connections."""
         try:
             while True:
                 client_socket, client_address = self.server_socket.accept()
-                print(f"Accepted connection from {client_address}")
+                logger.info(f"Accepted connection from {client_address}")
                 threading.Thread(
                     target=self.handle_client, args=(client_socket,)
                 ).start()
         except KeyboardInterrupt:
-            print("Shutting down server...")
+            logger.info("Shutting down server...")
         finally:
             self.server_socket.close()
 
@@ -93,11 +96,14 @@ class LogServer:
                     # Recreate a LogRecord object from the dictionary
                     log_record = logging.makeLogRecord(log_record_dict)
 
-                    self.logger.handle(log_record)  # Pass the log record to the logger
+                    self.aggregated_logger.handle(
+                        log_record
+                    )  # Pass the log record to the logger
+                    logger.info(f"Received log record: {log_record.getMessage()}")
                 except Exception as e:
-                    print(f"Error handling client log record: {e}")
+                    logger.error(f"Error handling client log record: {e}")
                     break
-        print("Client disconnected")
+        logger.info("Client disconnected")
 
 
 # Function to run the server

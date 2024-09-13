@@ -25,6 +25,9 @@ dependencies = [
   "python-config-loader @ git+https://github.com/davidson-engineering/python-config-loader.git",
 ]
 
+[tool.setuptools]
+py-modules = []
+
 # If a module, then use fetch version from src/module_name/__init__.py
 [tool.setuptools.dynamic]
 version = { attr = "log_server.__version__" }

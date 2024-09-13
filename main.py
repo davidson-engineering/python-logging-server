@@ -28,15 +28,9 @@ def start_server_thread():
     time.sleep(2)
 
 
-# Define the main function to create the server and client
-def main():
-    # Start the server
-    start_server_thread()
-
+def test_client_logging(host="127.0.0.1", port=9000):
     # Initialize the client
-    remote_logging_handler = logging.handlers.SocketHandler(
-        server_host="127.0.0.1", server_port=9000
-    )
+    remote_logging_handler = logging.handlers.SocketHandler(host=host, port=port)
 
     # Create a logger and add the handler
     logger = logging.getLogger("ApplicationLogger")
@@ -50,6 +44,13 @@ def main():
             extra={"device": "my_unique_device_id"},
         )
         time.sleep(1)
+
+
+# Define the main function to create the server and client
+def main():
+    # Start the server
+    # start_server_thread()
+    test_client_logging(host="127.0.0.1", port=9000)
 
 
 if __name__ == "__main__":
