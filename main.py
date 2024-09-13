@@ -2,30 +2,51 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Created By  : Matthew Davidson
-# Created Date: 2024-01-01
-# version ='0.0.1'
+# Created Date: 2023-01-23
+# version ='1.0'
 # ---------------------------------------------------------------------------
 """a_short_project_description"""
 # ---------------------------------------------------------------------------
 
+import threading
+import time
 import logging
-from logging.config import dictConfig
 
-# Import the load_configs function
-from config_loader import load_configs
-
-LOGGING_CONFIG_FILEPATH = "config/logging.yaml"
-APP_CONFIG_FILEPATH = "config/application.toml"
-
-# Load user configurations using the config_loader module
-configs = load_configs([APP_CONFIG_FILEPATH, LOGGING_CONFIG_FILEPATH])
-
-# Configure logging using the specified logging configuration
-dictConfig(configs["logging"])
+from src.log_server.log_client import create_log_handler
+from src.log_server.log_server import LogServer, run_server
 
 
+def start_server_thread():
+    # Start the server in a separate thread
+    server_thread = threading.Thread(target=run_server)
+    server_thread.daemon = (
+        True  # Daemonize the server thread so it shuts down with the main program
+    )
+    server_thread.start()
+
+    # Wait a bit to ensure the server has started
+    time.sleep(2)
+
+
+# Define the main function to create the server and client
 def main():
-    logging.info(configs["application"])
+    # Start the server
+    start_server_thread()
+
+    # Initialize the client
+    remote_logging_handler = create_log_handler(
+        server_host="127.0.0.1", server_port=9000
+    )
+
+    # Create a logger and add the handler
+    logger = logging.getLogger("ApplicationLogger")
+    logger.setLevel(logging.INFO)
+    logger.addHandler(remote_logging_handler)
+
+    # Log some messages using the logger
+    for i in range(5):
+        logger.info(f"Log message {i + 1} from application")
+        time.sleep(1)
 
 
 if __name__ == "__main__":
