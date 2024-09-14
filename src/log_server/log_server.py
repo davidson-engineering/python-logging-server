@@ -6,8 +6,15 @@ import socketserver
 import pickle
 import struct
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+
+def format_log(payload):
+    # convert created time to human readable format
+    dt = datetime.fromtimestamp(payload["created"])
+    payload["created_human"] = dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
 class LogDataCatcher(socketserver.BaseRequestHandler):
@@ -26,6 +33,8 @@ class LogDataCatcher(socketserver.BaseRequestHandler):
             payload_bytes = self.request.recv(payload_size[0])
             payload = pickle.loads(payload_bytes)
             LogDataCatcher.count += 1
+            # Apply custom formatting
+            format_log(payload)
             self.log_file.write(json.dumps(payload) + "\n")
             try:
                 size_header_bytes = self.request.recv(LogDataCatcher.size_bytes)
@@ -48,4 +57,4 @@ def serve_forever(host, port, target: Path):
 
 
 if __name__ == "__main__":
-    serve_forever()
+    serve_forever("localhost", 9001, target="logs.txt")

@@ -17,7 +17,7 @@ from log_server import serve_forever
 
 logger = logging.getLogger()
 
-HOST, PORT = "10.0.0.4", 9000
+HOST, PORT = "localhost", 9001
 
 
 def start_server_thread():
@@ -44,7 +44,7 @@ def test_client_logging():
             f"Log message {i + 1} from application",
             extra={"device": "my_unique_device_id"},
         )
-        time.sleep(0.001)
+        time.sleep(0.005)
     logging.shutdown()
 
 
