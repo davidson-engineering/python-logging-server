@@ -32,7 +32,7 @@ class LogDataCatcher(socketserver.BaseRequestHandler):
 def serve_forever(host, port, target: Path):
     if isinstance(target, str):
         target = Path(target)
-    with target.open("w") as unified_log:
+    with target.open("w", buffering=1) as unified_log:
         LogDataCatcher.log_file = unified_log
         with socketserver.TCPServer((host, port), LogDataCatcher) as server:
             server.serve_forever()

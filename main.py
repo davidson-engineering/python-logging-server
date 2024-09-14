@@ -38,12 +38,12 @@ def start_server_thread():
 def test_client_logging():
 
     # Log some messages using the logger
-    for i in range(10):
+    for i in range(10000):
         logger.info(
             f"Log message {i + 1} from application",
             extra={"device": "my_unique_device_id"},
         )
-        time.sleep(0.001)
+        # time.sleep(0.001)
 
 
 # Define the main function to create the server and client
