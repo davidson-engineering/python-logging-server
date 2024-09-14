@@ -3,7 +3,7 @@ import threading
 import time
 import pytest
 
-from src.log_server.log_server import LogServer
+from log_server.log_server_old import LogServer
 
 HOST = "127.0.0.1"
 

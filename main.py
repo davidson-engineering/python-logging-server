@@ -12,11 +12,18 @@ import threading
 import time
 import logging
 
-from src.log_server import create_log_handler
-from src.log_server import LogServer, run_server
+from log_server import serve_forever
+
+logger = logging.getLogger()
+
+HOST, PORT = "127.0.0.1", 9009
 
 
 def start_server_thread():
+
+    def run_server():
+        serve_forever(HOST, PORT, target="logs.txt")
+
     # Start the server in a separate thread
     server_thread = threading.Thread(target=run_server)
     server_thread.daemon = (
@@ -28,29 +35,27 @@ def start_server_thread():
     time.sleep(2)
 
 
-def test_client_logging(host="127.0.0.1", port=9000):
-    # Initialize the client
-    remote_logging_handler = logging.handlers.SocketHandler(host=host, port=port)
-
-    # Create a logger and add the handler
-    logger = logging.getLogger("ApplicationLogger")
-    logger.setLevel(logging.INFO)
-    logger.addHandler(remote_logging_handler)
+def test_client_logging():
 
     # Log some messages using the logger
-    for i in range(5):
+    for i in range(10000):
         logger.info(
             f"Log message {i + 1} from application",
             extra={"device": "my_unique_device_id"},
         )
-        time.sleep(1)
+        time.sleep(0.001)
 
 
 # Define the main function to create the server and client
 def main():
-    # Start the server
-    # start_server_thread()
-    test_client_logging(host="127.0.0.1", port=9000)
+    # Create a logger and add the handler
+    remote_logging_handler = logging.handlers.SocketHandler(host=HOST, port=PORT)
+    stream_handler = logging.StreamHandler()
+    logging.basicConfig(
+        level=logging.INFO,
+        handlers=[remote_logging_handler, stream_handler],
+    )
+    test_client_logging()
 
 
 if __name__ == "__main__":
