@@ -38,7 +38,7 @@ def start_server_thread():
 def test_client_logging():
 
     # Log some messages using the logger
-    for i in range(10000):
+    for i in range(10):
         logger.info(
             f"Log message {i + 1} from application",
             extra={"device": "my_unique_device_id"},

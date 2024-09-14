@@ -1,4 +1,4 @@
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 from .log_client import create_log_handler
 from .log_server import serve_forever
