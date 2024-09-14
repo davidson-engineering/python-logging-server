@@ -38,12 +38,13 @@ def start_server_thread():
 def test_client_logging():
 
     # Log some messages using the logger
-    for i in range(10000):
+    for i in range(100):
         logger.info(
             f"Log message {i + 1} from application",
             extra={"device": "my_unique_device_id"},
         )
-        # time.sleep(0.001)
+        time.sleep(0.001)
+    logging.shutdown()
 
 
 # Define the main function to create the server and client
@@ -55,6 +56,7 @@ def main():
         level=logging.INFO,
         handlers=[remote_logging_handler, stream_handler],
     )
+    # start_server_thread()
     test_client_logging()
 
 
