@@ -8,6 +8,7 @@
 """a_short_project_description"""
 # ---------------------------------------------------------------------------
 
+import sys
 import threading
 import time
 import logging
@@ -16,7 +17,7 @@ from log_server import serve_forever
 
 logger = logging.getLogger()
 
-HOST, PORT = "127.0.0.1", 9009
+HOST, PORT = "10.0.0.4", 9000
 
 
 def start_server_thread():
@@ -51,7 +52,7 @@ def test_client_logging():
 def main():
     # Create a logger and add the handler
     remote_logging_handler = logging.handlers.SocketHandler(host=HOST, port=PORT)
-    stream_handler = logging.StreamHandler()
+    stream_handler = logging.StreamHandler(sys.stdout)
     logging.basicConfig(
         level=logging.INFO,
         handlers=[remote_logging_handler, stream_handler],

@@ -39,9 +39,12 @@ def serve_forever(host, port, target: Path):
         target = Path(target)
     with target.open("w") as unified_log:
         LogDataCatcher.log_file = unified_log
-        with socketserver.TCPServer((host, port), LogDataCatcher) as server:
-            logger.info(f"Starting server on {host}:{port}")
-            server.serve_forever()
+        try:
+            with socketserver.TCPServer((host, port), LogDataCatcher) as server:
+                logger.info(f"Starting server on {host}:{port}")
+                server.serve_forever()
+        except OSError as e:
+            logger.error(f"Failed to start server on {host}:{port} {e}")
 
 
 if __name__ == "__main__":
