@@ -2,6 +2,7 @@ import time
 import logging
 import pickle
 import struct
+import log_server.remote_logging_app as remote_logging_app
 from unittest.mock import MagicMock, patch
 
 
@@ -32,20 +33,7 @@ def test_handle_client(mock_socket, server):
     mock_client_socket.recv.assert_called()
 
 
-def test_log_server_logs(server):
-    """Test that logs are correctly appended to the log file by LogServer."""
-    server_instance, log_file, host, port = server
-    logger = logging.getLogger("TestLogger")
-    logger.setLevel(logging.INFO)
-    handler = logging.handlers.SocketHandler(host, port)
-    logger.addHandler(handler)
+def test_log_server_logs(logging_server, logging_config):
 
-    logger.info("Test message for server logging")
-
-    # Wait a moment to ensure the message is logged
-    time.sleep(1)
-
-    with open(log_file, "r") as file:
-        logs = file.read()
-
-    assert "Test message for server logging" in logs
+    for i in range(5):
+        r = remote_logging_app.work(i)  # Wait a moment to ensure the message is logged

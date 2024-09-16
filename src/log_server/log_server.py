@@ -2,111 +2,108 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Created By  : Matthew Davidson
-# Created Date: 2023-01-23
+# Created Date: 2024-09-14
 # version ='1.0'
 # ---------------------------------------------------------------------------
-"""a_short_module_description"""
+"""Logging server to receive logs from multiple clients"""
 # ---------------------------------------------------------------------------
 
-import socket
-import logging
-import logging.handlers
+from __future__ import annotations
+import json
+from pathlib import Path
 import threading
+from typing import TextIO
+import socketserver
 import pickle
 import struct
-import os
-import json
-
+import logging
+from datetime import datetime
+import prometheus_client
 
 logger = logging.getLogger(__name__)
 
 
-class JsonFormatter(logging.Formatter):
-    """Custom JSON formatter for logging that includes extra fields."""
-
-    def format(self, record):
-        log_entry = {
-            "asctime": self.formatTime(record, self.datefmt),
-            "name": record.name,
-            "levelname": record.levelname,
-            "message": record.getMessage(),
-        }
-        if record.exc_info:
-            log_entry["exception"] = self.formatException(record.exc_info)
-        if record.stack_info:
-            log_entry["stack_info"] = self.formatStack(record.stack_info)
-        if record.args:
-            log_entry["args"] = record.args
-        if hasattr(record, "device"):
-            log_entry["device"] = record.device
-        return json.dumps(log_entry)
+def format_log(payload):
+    # convert created time to human readable format
+    dt = datetime.fromtimestamp(payload["created"])
+    payload["created_human"] = dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
-# Define the LogServer class
-class LogServer:
-    def __init__(self, host="127.0.0.1", port=9000, log_file="logs.txt"):
-        self.host = host
-        self.port = port
-        self.log_file = log_file
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server_socket.bind((self.host, self.port))
-        self.server_socket.listen(5)
+class LogDataCatcher(socketserver.BaseRequestHandler):
 
-        # Configure FileHandler
-        self.file_handler = logging.FileHandler(self.log_file)
-        # self.file_handler.setFormatter(
-        #     logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        # )
-        self.file_handler.setFormatter(JsonFormatter())
+    log_file: TextIO
+    size_format = ">L"
+    size_bytes = struct.calcsize(size_format)
+    file_lock = threading.Lock()
 
-        # Create and configure logger
-        self.aggregated_logger = logging.getLogger("aggregated_logger")
-        self.aggregated_logger.setLevel(logging.DEBUG)
-        self.aggregated_logger.addHandler(self.file_handler)
+    logging_server_log_count = prometheus_client.Counter(
+        "logging_server_log_count",
+        "Number of logs received by the logging server",
+        ["client"],
+    )
 
-    def start(self):
-        """Start the server and handle client connections."""
+    def handle(self):
+        logger.info(f"Received connection from {self.client_address}")
+        # Receive and unpack the message
+        size_header_bytes = self.request.recv(LogDataCatcher.size_bytes)
+        while size_header_bytes:
+            payload_size = struct.unpack(LogDataCatcher.size_format, size_header_bytes)
+            payload_bytes = self.recv_all(self.request, payload_size[0])
+            payload = pickle.loads(payload_bytes)
+            LogDataCatcher.logging_server_log_count.labels(
+                client=str(self.client_address)
+            ).inc()
+            # Apply custom formatting
+            format_log(payload)
+            with LogDataCatcher.file_lock:
+                self.log_file.write(json.dumps(payload) + "\n")
+            try:
+                size_header_bytes = self.request.recv(LogDataCatcher.size_bytes)
+            except (ConnectionResetError, BrokenPipeError):
+                logger.warning("Connection closed by client")
+                break
+
+    def recv_all(self, sock, size):
+        """Helper function to receive the exact number of bytes required."""
+        data = b""
+        while len(data) < size:
+            packet = sock.recv(size - len(data))
+            if not packet:
+                raise EOFError("Connection closed while receiving data")
+            data += packet
+        return data
+
+
+def serve_forever(host, port, target: Path, multithreaded=False):
+    # Create a TCP server, bind it to the host and port, and start serving
+
+    # Choose the server factory based on the multithreaded flag
+    if multithreaded:
+        server_factory = socketserver.ThreadingTCPServer
+    else:
+        server_factory = socketserver.TCPServer
+
+    # Open the target file for writing
+    if isinstance(target, str):
+        target = Path(target)
+
+    with target.open("w") as unified_log:
+        LogDataCatcher.log_file = unified_log
+
         try:
-            while True:
-                client_socket, client_address = self.server_socket.accept()
-                logger.info(f"Accepted connection from {client_address}")
-                threading.Thread(
-                    target=self.handle_client, args=(client_socket,)
-                ).start()
-        except KeyboardInterrupt:
-            logger.info("Shutting down server...")
-        finally:
-            self.server_socket.close()
+            with server_factory((host, port), LogDataCatcher) as server:
+                logger.info(f"Starting server on {host}:{port}")
 
-    def handle_client(self, client_socket):
-        """Handle incoming logs from a connected client."""
-        with client_socket:
-            while True:
-                try:
-                    # Receive the log record length
-                    data = client_socket.recv(4)
-                    if not data:
-                        break
-                    record_length = struct.unpack(">L", data)[0]
-                    # Receive the log record itself
-                    log_record_data = client_socket.recv(record_length)
-                    log_record_dict = pickle.loads(log_record_data)
+                server.serve_forever()
 
-                    # Recreate a LogRecord object from the dictionary
-                    log_record = logging.makeLogRecord(log_record_dict)
-
-                    self.aggregated_logger.handle(
-                        log_record
-                    )  # Pass the log record to the logger
-                    logger.info(f"Received log record: {log_record.getMessage()}")
-                except Exception as e:
-                    logger.error(f"Error handling client log record: {e}")
-                    break
-        logger.info("Client disconnected")
+        except OSError as e:
+            logger.error(f"Failed to start server on {host}:{port} {e}")
 
 
-# Function to run the server
-def run_server():
-    log_server = LogServer(host="127.0.0.1", port=9000, log_file="server_logs.txt")
-    log_server.start()
+if __name__ == "__main__":
+    # logging.basicConfig(
+    #     level=logging.INFO,
+    #     format="%(asctime)s - %(message)s",
+    #     handlers=[logging.StreamHandler()],
+    # )
+    serve_forever("localhost", 9001, target="logs.txt", multithreaded=False)

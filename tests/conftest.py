@@ -1,28 +1,45 @@
+from __future__ import annotations
+import subprocess
+import signal
 import socket
-import threading
+import sys
 import time
 import pytest
+import logging
+import log_server.remote_logging_app as remote_logging_app
+from typing import Iterator
 
-from src.log_server.log_server import LogServer
 
-HOST = "127.0.0.1"
+@pytest.fixture(scope="session")
+def logging_server() -> Iterator[None]:
+    print("Starting log server")
+    p = subprocess.Popen(
+        ["python3", "src/log_server/log_server.py"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    time.sleep(0.25)
+
+    yield
+
+    p.terminate()
+    p.wait()
+    if p.stdout:
+        print(p.stdout.read())
+    assert (
+        p.returncode == -signal.SIGTERM.value
+    ), f"Error in watcher, return code={p.returncode}"
 
 
 @pytest.fixture
-def server(tmp_path):
-    """Fixture to create a LogServer instance with a temporary log file."""
+def logging_config() -> Iterator[None]:
+    HOST, PORT = "localhost", 9001
+    socket_handler = logging.handlers.SocketHandler(HOST, PORT)
+    # remote_logging_app.logger.addHandler(socket_handler)
+    logging.basicConfig(level=logging.INFO, handlers=[socket_handler])
 
-    def find_available_port():
-        """Find and return an available port."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("", 0))
-            return s.getsockname()[1]
+    yield
 
-    port = find_available_port()
-    log_file = tmp_path / f"test_logs_{time.time_ns()}.txt"
-    server_instance = LogServer(host=HOST, port=port, log_file=str(log_file))
-    threading.Thread(target=server_instance.start, daemon=True).start()
-    # Give the server some time to start
-    time.sleep(1)
-    yield server_instance, log_file, HOST, port
-    server_instance.server_socket.close()
+    socket_handler.close()
+    remote_logging_app.logger.removeHandler(socket_handler)
