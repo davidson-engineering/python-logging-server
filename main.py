@@ -8,6 +8,7 @@
 """a_short_project_description"""
 # ---------------------------------------------------------------------------
 
+import random
 import sys
 import threading
 import time
@@ -38,14 +39,24 @@ def start_server_thread():
 
 def test_client_logging():
 
+    id = random.randint(1, 1000)
+
     # Log some messages using the logger
     for i in range(100):
         logger.info(
             f"Log message {i + 1} from application",
-            extra={"device": "my_unique_device_id"},
+            extra={"device": id},
         )
-        time.sleep(0.005)
+        logger.error("some error", extra={"device": id})
+        logger.warning("some warning", extra={"device": id})
+        logger.debug("some debug", extra={"device": id})
+        time.sleep(0.1)
     logging.shutdown()
+
+
+def start_client_thread():
+    client_thread = threading.Thread(target=test_client_logging)
+    client_thread.start()
 
 
 # Define the main function to create the server and client
@@ -59,6 +70,9 @@ def main():
     )
     # start_server_thread()
     test_client_logging()
+
+    for i in range(10):
+        start_client_thread()
 
 
 if __name__ == "__main__":

@@ -23,6 +23,7 @@ classifiers = [
 
 dependencies = [
   "python-config-loader @ git+https://github.com/davidson-engineering/python-config-loader.git",
+  "prometheus-client >= 0.20",
 ]
 
 # [tool.setuptools]
@@ -51,7 +52,8 @@ test = ["pytest >= 7.1.1"]
 # tomatoes = "spam:main_tomatoes"
 
 
-# [tool.pytest.ini_options]
-# maxfail = 1
-# disable_warnings = true
-# q = true
+[tool.pytest.ini_options]
+addopts = "--maxfail=1 -s"
+console_output_style = "count"
+# log_cli = true
+log_cli_format = "%(asctime)s %(levelname)s %(message)s"
