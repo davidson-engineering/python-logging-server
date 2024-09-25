@@ -2,77 +2,54 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Created By  : Matthew Davidson
-# Created Date: 2023-01-23
+# Created Date: 2024-09-14
 # version ='1.0'
 # ---------------------------------------------------------------------------
-"""a_short_project_description"""
+"""Logging client to send logs to a remote server"""
 # ---------------------------------------------------------------------------
 
-import random
+from __future__ import annotations
+
+
+# Server Configuration
+# --------------------
+# Logging server can  be started by running the following command:
+# from log_server import serve_forever
+# serve_forever(HOST, PORT, target="logs.txt")
+# Note that the server will run indefinitely until it is stopped manually
+# and this call will block the current thread.
+
+# Client Configuration
+# --------------------
+import logging.handlers
+from math import factorial
 import sys
-import threading
-import time
-import logging
 
-from log_server import serve_forever
-
-logger = logging.getLogger()
-
+# The address of the logging server
 HOST, PORT = "localhost", 9001
 
-
-def start_server_thread():
-
-    def run_server():
-        serve_forever(HOST, PORT, target="logs.txt")
-
-    # Start the server in a separate thread
-    server_thread = threading.Thread(target=run_server)
-    server_thread.daemon = (
-        True  # Daemonize the server thread so it shuts down with the main program
-    )
-    server_thread.start()
-
-    # Wait a bit to ensure the server has started
-    time.sleep(2)
+logger = logging.getLogger("remote_logging_app")
 
 
-def test_client_logging():
-
-    id = random.randint(1, 1000)
-
-    # Log some messages using the logger
-    for i in range(100):
-        logger.info(
-            f"Log message {i + 1} from application",
-            extra={"device": id},
-        )
-        logger.error("some error", extra={"device": id})
-        logger.warning("some warning", extra={"device": id})
-        logger.debug("some debug", extra={"device": id})
-        time.sleep(0.1)
-    logging.shutdown()
+def work(i: int) -> int:
+    logger.info("Factorial %d", i)
+    f = factorial(i)
+    logger.info("Factorial(%d) = %d", i, f)
+    return f
 
 
-def start_client_thread():
-    client_thread = threading.Thread(target=test_client_logging)
-    client_thread.start()
-
-
-# Define the main function to create the server and client
 def main():
-    # Create a logger and add the handler
-    remote_logging_handler = logging.handlers.SocketHandler(host=HOST, port=PORT)
-    stream_handler = logging.StreamHandler(sys.stdout)
+    socket_handler = logging.handlers.SocketHandler(HOST, PORT)
+    stream_handler = logging.StreamHandler(sys.stderr)
     logging.basicConfig(
         level=logging.INFO,
-        handlers=[remote_logging_handler, stream_handler],
+        handlers=[socket_handler, stream_handler],
     )
-    # start_server_thread()
-    test_client_logging()
 
     for i in range(10):
-        start_client_thread()
+        work(i)
+
+    logging.shutdown()
 
 
 if __name__ == "__main__":

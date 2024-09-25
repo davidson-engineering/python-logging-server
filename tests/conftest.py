@@ -1,8 +1,6 @@
 from __future__ import annotations
 import subprocess
 import signal
-import socket
-import sys
 import time
 import pytest
 import logging
@@ -36,7 +34,7 @@ def logging_server() -> Iterator[None]:
 def logging_config() -> Iterator[None]:
     HOST, PORT = "localhost", 9001
     socket_handler = logging.handlers.SocketHandler(HOST, PORT)
-    # remote_logging_app.logger.addHandler(socket_handler)
+    remote_logging_app.logger.addHandler(socket_handler)
     logging.basicConfig(level=logging.INFO, handlers=[socket_handler])
 
     yield
