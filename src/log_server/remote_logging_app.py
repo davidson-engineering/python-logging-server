@@ -20,7 +20,7 @@ HOST, PORT = "localhost", 9001
 
 
 def work(i: int) -> int:
-    logger.info("Facrorial %d", i)
+    logger.info("Factorial %d", i)
     f = factorial(i)
     logger.info("Factorial(%d) = %d", i, f)
     return f

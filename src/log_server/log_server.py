@@ -39,7 +39,7 @@ class LogDataCatcher(socketserver.BaseRequestHandler):
     logging_server_log_count = prometheus_client.Counter(
         "logging_server_log_count",
         "Number of logs received by the logging server",
-        ["client"],
+        ["client", "levelname"],
     )
 
     def handle(self):
@@ -51,7 +51,7 @@ class LogDataCatcher(socketserver.BaseRequestHandler):
             payload_bytes = self.recv_all(self.request, payload_size[0])
             payload = pickle.loads(payload_bytes)
             LogDataCatcher.logging_server_log_count.labels(
-                client=str(self.client_address)
+                client=str(self.client_address), levelname=payload["levelname"]
             ).inc()
             # Apply custom formatting
             format_log(payload)
