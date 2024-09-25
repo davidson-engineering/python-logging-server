@@ -101,9 +101,5 @@ def serve_forever(host, port, target: Path, multithreaded=False):
 
 
 if __name__ == "__main__":
-    # logging.basicConfig(
-    #     level=logging.INFO,
-    #     format="%(asctime)s - %(message)s",
-    #     handlers=[logging.StreamHandler()],
-    # )
+
     serve_forever("localhost", 9001, target="logs.txt", multithreaded=False)

@@ -21,10 +21,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 
-dependencies = [
-  "python-config-loader @ git+https://github.com/davidson-engineering/python-config-loader.git@0.0.2",
-  "prometheus-client >= 0.20",
-]
+dependencies = ["prometheus-client >= 0.20"]
 
 [tool.setuptools.dynamic]
 version = { attr = "log_server.__version__" }
