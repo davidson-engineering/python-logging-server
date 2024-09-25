@@ -1,10 +1,7 @@
 [project]
 name = "python-logging-server"
-description = "A_short_description"
+description = "A lightweight server to collect logs from remote clients, allowing centralized log storage for distributed applications."
 
-# If a project, then you can specify version here
-# version = "0.0.1"
-# If a module, then fetch version dynamically (see [tool.setuptools.dynamic] below)
 dynamic = ["version"]
 
 readme = "README.md"
@@ -19,17 +16,16 @@ classifiers = [
   "Development Status :: 1 - Planning",
   "Operating System :: Microsoft :: Windows",
   "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
 ]
 
 dependencies = [
-  "python-config-loader @ git+https://github.com/davidson-engineering/python-config-loader.git",
+  "python-config-loader @ git+https://github.com/davidson-engineering/python-config-loader.git@0.0.2",
   "prometheus-client >= 0.20",
 ]
 
-# [tool.setuptools]
-# py-modules = []
-
-# If a module, then use fetch version from src/module_name/__init__.py
 [tool.setuptools.dynamic]
 version = { attr = "log_server.__version__" }
 

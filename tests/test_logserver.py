@@ -1,7 +1,13 @@
-import log_server.remote_logging_app as remote_logging_app
+import pytest
+from datetime import datetime
+from log_server.log_server import format_log
 
 
-def test_log_server_logs(logging_server, logging_config):
-
-    for i in range(5):
-        r = remote_logging_app.work(i)  # Wait a moment to ensure the message is logged
+def test_format_log():
+    payload = {
+        "created": datetime.now().timestamp(),
+    }
+    format_log(payload)
+    assert "created_human" in payload
+    assert isinstance(payload["created_human"], str)
+    assert len(payload["created_human"]) > 0

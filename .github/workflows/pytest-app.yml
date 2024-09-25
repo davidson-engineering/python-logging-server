@@ -5,9 +5,9 @@ name: python-app-testing
 
 on:
   push:
-    branches: [ "test" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "test" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -20,21 +20,7 @@ jobs:
       max-parallel: 12
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-    # Below example is to setup service container for influxdb database.
-    # env variables set for minimal bootstrapped setup 
-    # services:
-    #   influxdb-test:
-    #     image: influxdb:latest
-    #     ports:
-    #       - 8086:8086
-    #     env:
-    #       DOCKER_INFLUXDB_INIT_MODE: setup
-    #       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: super_secret_token
-    #       DOCKER_INFLUXDB_INIT_ORG: my_org
-    #       DOCKER_INFLUXDB_INIT_BUCKET: testing
-    #       DOCKER_INFLUXDB_INIT_USERNAME: user
-    #       DOCKER_INFLUXDB_INIT_PASSWORD: password
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13.0-rc.2"]
 
     steps:
     - name: Check out repository code
